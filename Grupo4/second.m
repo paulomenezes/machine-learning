@@ -64,6 +64,9 @@ function [] = second()
   fp = 0;
   tn = 0;
   
+  n = 0;
+  p = 0;
+  
   for idxTest = 1 : NTest
   
     # newpoint = [1.0	0.3333333333333333	0.2222222222222222	0.0	0.2222222222222222	0.2222222222222222	0.5555555555555556	0.4444444444444444	0.1111111111111111];
@@ -94,7 +97,7 @@ function [] = second()
       idxFind += 1;
     endwhile
     
-    scores = [scores;dists(idxPositive, 1) / dists(idxNegative, 1) classTest(idxTest)];
+    scores = [scores; dists(idxPositive, 1) / dists(idxNegative, 1) classTest(idxTest)];
     
     ind_closest = ind(1:k);
     
@@ -102,6 +105,14 @@ function [] = second()
     
     # mode(class(ind_closest))
     # mode(classTest(ind_closest))
+    
+    if (classTest(idxTest) == 1)
+      p += 1;
+    endif
+    
+    if (classTest(idxTest) == 0)
+      n += 1;
+    endif
     
     if (mode(class(ind_closest)) == classTest(idxTest))
       acertos += 1;
@@ -142,6 +153,11 @@ function [] = second()
   sensitividade = tn / (tn + fp);
   sensitividade
   
-  scores
+  # scores(:,1)
+  
+  #n
+  #p
+
+  roc(scores(:,1)', scores(:,2)', n, p);
   
 endfunction
