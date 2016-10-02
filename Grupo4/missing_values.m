@@ -7,7 +7,7 @@ function [] = missing_values()
         continue
     end
     
-    strsplit(line, ',[')(1, 1)
+    line
     
     count = count + 1;
   end
