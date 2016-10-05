@@ -49,21 +49,25 @@ function [] = series()
   fclose(fid);
   
   for i = 1: 141
-    energy(1, i) = (energy(1, i) - min) / (max - min);
+    #energy(1, i) = (energy(1, i) - min) / (max - min);
     
     if (i > 1)
-      energy(1, i) = energy(1, i) - energy(1, i - 1);
+    #  energy(1, i) = energy(1, i) - energy(1, i - 1);
     endif
   endfor
   
+  energy = energy';
+  
   for i = 2: 141
-    energy(1, i) = energy(1, i) - energy(1, i - 1);
+    energy(i) = energy(i) - energy(i - 1);
   endfor
   
-  validate = energy(1,1:56);
-  train = energy(1,57:113);
-  test = energy(1,114:141);
+  #validate = energy(1,1:56);
+  #train = energy(1,57:113);
+  #test = energy(1,114:141);
+  
+  year = year';
     
-  plot(energy);
+  scatter([1:141]', energy(:) );
   
 endfunction

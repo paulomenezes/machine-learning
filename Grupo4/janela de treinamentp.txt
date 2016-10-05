@@ -1,0 +1,1 @@
+janela de tempo = 3, 5, 7, 9
