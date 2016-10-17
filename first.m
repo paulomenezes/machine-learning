@@ -1,8 +1,7 @@
 function [] = first()
   #base padronizada
   arquivo = fopen('BasePadronizadaAudiology.txt', 'r');
-  classe_fantasma = 100;
-  
+   
   #número total de exemplos na base
   nLinhas = 200;
   
@@ -39,7 +38,7 @@ function [] = first()
     for i = 1:nColunas; #a última coluna é a classe
      if i == nColunas;
      #a classe 1 não existe para evitar possível erros no uso do find
-      if strcmp(linhaSeparador(i), "cochlear_unknown"); base(nLinha, nColunas) = 24;
+      if strcmp(linhaSeparador(i), "cochlear_unknown"); base(nLinha, nColunas) = 25;
       elseif strcmp(linhaSeparador(i), "mixed_cochlear_age_fixation"); base(nLinha, nColunas) = 2;
       elseif strcmp(linhaSeparador(i), "poss_central"); base(nLinha, nColunas) = 3;
       elseif strcmp(linhaSeparador(i), "mixed_cochlear_age_otitis_media"); base(nLinha, nColunas) = 4;
@@ -62,7 +61,7 @@ function [] = first()
       elseif strcmp(linhaSeparador(i), "mixed_cochlear_age_s_om"); base(nLinha, nColunas) = 21;
       elseif strcmp(linhaSeparador(i), "mixed_cochlear_unk_discontinuity"); base(nLinha, nColunas) = 22;
       elseif strcmp(linhaSeparador(i), "mixed_poss_central_om"); base(nLinha, nColunas) = 23;
-      else  base(nLinha, nColunas) = classe_fantasma; #caso contrário classe fantasma
+      else  base(nLinha, nColunas) = 24;
       endif;
      elseif i == nColunas - 1;
           base(nLinha, i) = nLinha;
@@ -154,22 +153,10 @@ function [] = first()
     
     nLinha = nLinha + 1;
   endwhile
-  
-  #REMOVER CLASSES FANTASMAS
-  [ko, ke] = find (base == 100);
-  for i = 1:length(ko);
-    base(ko(i), :) = []; #ko(i) retorna a linha que contém o -1
-  end;
-  
-  #VER SE REMOVER FANTASAMAS PRECISA
-  #OLHA QUI
-  #
-  
-  
-  
+
   #base após o missing
   #são três bases sem missing (três dimensões)
-  baseSemMissing = zeros(nLinhas - size(ko,1), nColunas, 2); #média classe e moda
+  baseSemMissing = zeros(nLinhas, nColunas, 2); #média classe e moda
   baseSemMissing_elementosRemovidos = base; #remover exemplos
   
   #MISSING VALUES
@@ -179,6 +166,8 @@ function [] = first()
     baseSemMissing_elementosRemovidos(x(i),:) = []; #x(i) retorna a linha que contém o -1
   end;
   
+  
+  baseSemMissing(:,:,1) = base;
   #MÉDIA CLASSE
   [x, y] = find(base == -1);
   x1 = 0;
@@ -212,15 +201,15 @@ function [] = first()
         
         media = soma/nElementosDaClasse;
         
-        baseSemMissing(:,:,1) = base;
         baseSemMissing(i,coluna,1) = media;
   end;
   
   #MÉDIA DOS K5
   #TÁ ERRADO, PONDO SÓ PARA EVITAR ERR LOGO ABAIXO PÕE ZERO
+  baseSemMissing(:,:,2) = base;
   [x, y] = find (base == -1);
   for i = 1:length(x);
-    baseSemMissing(x(i),:,2) = 0.0; #x(i) retorna a linha que contém o -1
+    baseSemMissing(x(i),:,2) = 5.0; #x(i) retorna a linha que contém o -1
   end;
   
   #cria-se uma nova base, que simplificará no uso do fold abaixo
@@ -232,7 +221,7 @@ function [] = first()
   
   k_knn = 3;
   
-  clear base; #limpa a base original
+  acuracia = zeros(1,3); #acurácia dos três modelos
   
   base_apos_tudo = ones(2,2);
   for i = 1:3; #pois é a quantidade de bases sem missing
@@ -295,10 +284,38 @@ function [] = first()
     
     if i == 1;
       classe_knn_media_classe = knnP(k_knn, base_fold_cv_media_classe);
+      for index = 1:size(classe_knn_media_classe)
+        if classe_knn_media_classe(i,1) == base(i, nColunas)
+          acuracia(1,1) = acuracia(1,1) + 1;
+        endif;
+      endfor;
+      acuracia(1,1) = acuracia(1,1)/size(classe_knn_media_classe, 1)
     elseif i == 2;
       classe_knn_k5 = knnP(k_knn, base_fold_cv_k5);
-    elseif i ==3;
+      for index = 1:size(classe_knn_media_classe)
+        if classe_knn_k5(i,1) == base(i, nColunas)
+          acuracia(1,2) = acuracia(1,2) + 1;
+        endif;
+      endfor;
+      acuracia(1,2) = acuracia(1,2)/size(classe_knn_k5, 1)
+    elseif i == 3;
       classe_knn_remover_missing = knnP(k_knn, base_fold_cv_remover_missing);
+      for index = 1:size(classe_knn_remover_missing)
+        if classe_knn_k5(i,1) == base_fold_cv_remover_missing(i, nColunas)
+          acuracia(1,3) = acuracia(1,3) + 1;
+        endif;
+      endfor;
+      acuracia(1,3) = acuracia(1,3)/size(classe_knn_remover_missing, 1)
+    endif;
+    
+    if i == 3;
+      if acuracia(1,1) >= acuracia(1,2) && acuracia(1,1) >= acuracia(1,3);
+        base_apos_tudo = base_fold_cv_media_classe;
+      elseif acuracia(1,2) >= acuracia(1,1) && acuracia(1,2) >= acuracia(1,3);
+        base_apos_tudo = base_fold_cv_k5;
+      elseif acuracia(1,3) >= acuracia(1,1) && acuracia(1,3) >= acuracia(1,2);
+        base_apos_tudo = base_fold_cv_remover_missing;
+      endif;
     endif;
   end;
   
