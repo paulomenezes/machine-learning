@@ -33,14 +33,6 @@ function [] = series()
       
       month(1, N) = str2double(data(1, 2));
       energy(1, N) = str2double(data(1, 3));
-      
-      if energy(1, N) > max
-        max = energy(1, N);
-      endif
-      
-      if energy(1, N) < min
-        min = energy(1, N);
-      endif
     else
       first = 1;
     endif
@@ -50,17 +42,26 @@ function [] = series()
   
   energy = energy';
   
-  for i = 1: 141
-    energy(i) = (energy(i) - min) / (max - min);
-  endfor
-  
   j = 1;
   energyStandardized = zeros(141, 1);
   for i = 2: 141
     energyStandardized(i) = energy(i) - energy(j);
+
+    if energyStandardized(i) > max
+      max = energyStandardized(i);
+    endif
+    
+    if energyStandardized(i) < min
+      min = energyStandardized(i);
+    endif
+
     j++;
   endfor
   
+  for i = 1: 141
+    energyStandardized(i) = (energyStandardized(i) - min) / (max - min);
+  endfor
+    
   #plot(energy, 'r+');
   
   #validate = energy(1,1:56);
@@ -74,6 +75,6 @@ function [] = series()
   data = horzcat(year, month');
   dataSet = horzcat(data, energyStandardized);
   
-  csvwrite("energy.normalized.csv", dataSet);
+  csvwrite("energy.normalized.csv", energyStandardized);
   
 endfunction
