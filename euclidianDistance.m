@@ -27,7 +27,7 @@ function [d] = euclidianDistance(a, b)
   
   % size(a, 1) número de linhas
   % size(a, 2) número de colunas
-  for i = 1:size(a, 2)
+  for i = 1:size(a, 2) - 2;
     d = d + (a(1, i) - b(1, i)) ^2;
   endfor
   

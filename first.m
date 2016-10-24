@@ -67,7 +67,7 @@ function [] = first()
           base(nLinha, i) = nLinha;
      else
       if strcmp(linhaSeparador(i), "?");
-              linhaSeparador(i) = "-1.00"; #transforma o missing values de ? para -1
+              base(nLinha,i) = -1.00; #transforma o missing values de ? para -1
       else        
         for j = 1:length(atributosNaoVF);
           if i == atributosNaoVF(j);
@@ -84,7 +84,7 @@ function [] = first()
                 elseif strcmp(linhaSeparador(i), "normal");
                    base(nLinha, i) = 0.00;
                 elseif strcmp(linhaSeparador(i), "elevated");
-                  base(nLinha, i) = .50;
+                  base(nLinha, i) = 0.50;
                 endif;
             elseif qtdRespostas == 4;
                 if strcmp(linhaSeparador(i), "mild");
@@ -161,23 +161,36 @@ function [] = first()
   
   #MISSING VALUES
   #REMOVER EXEMPLOS 
-  [x, y] = find (base == -1);
-  for i = 1:length(x);
-    baseSemMissing_elementosRemovidos(x(i),:) = []; #x(i) retorna a linha que contém o -1
+  tam = 0;
+  baseSemMissing_elementosRemovidos(:,8) = [];
+  [x, y] = find (baseSemMissing_elementosRemovidos == -1.00);
+  tamanhoBase = size(baseSemMissing_elementosRemovidos, 1);
+  i = 1;
+  n_removidos = 0;
+  while tamanhoBase > 0 || i <= size(base,1)
+    [ex, ey] = find(x == i); #então existe -1 na linha
+    tam = size(ex,1);
+    if tam > 0;
+      baseSemMissing_elementosRemovidos(i - n_removidos,:) = []; #x(i) retorna a linha que contém o -1
+      n_removidos = n_removidos + 1;
+    endif;
+    i = i + 1;
+    tamanhoBase = tamanhoBase - 1;
   end;
-  
   
   baseSemMissing(:,:,1) = base;
   #MÉDIA CLASSE
-  [x, y] = find(base == -1);
+  [x, y] = find(base == -1.00);
   x1 = 0;
-  for i = 1:size(x, 1);
+  nElementosDaClasse = 0;
+  divisor = 0;
+  for i = 1:size(x, 1); #número de elementos que deve ser modificado
       if x1 ~= x(i);
-        #seta a classe missing value
+        #seta a classe missing value do exemplo
         classe = base(x(i), nColunas);
       
         #acha os elementos da base que sejam da classe
-        [z] = find(base == classe);
+        [z, t] = find(base == classe);
       
         #pega a quantidade de elementos que existe na base daquela classe
         nElementosDaClasse = length(z); #SE NÃO CONTAR COM O DO ELEMENTO TEM DE SUBTRAIR 1
@@ -185,140 +198,58 @@ function [] = first()
         #seta o valor da linha do elemento
          x1 = x(i);
       endif;
-         
+         divisor = 0;
         #recebe a coluna do elemento em questão 
          coluna = y(i);
          
          #soma/media dos atributos dos elementos que pertencem à classe
          soma = 0;
          media = 0;
-         
-       for j = 1:nElementosDaClasse;
-          if isreal(base(z(j), coluna)) == true; #TEM DE VERIFICAR SE FUNCIONA
-            soma = soma + base(z(j), coluna);
+       if nElementosDaClasse == 1; #quer dizer que só tem ele como exemplo
+        baseSemMissing(x(i),coluna,1) = 0.0; #media = 0
+       else
+         for j = 1:nElementosDaClasse;
+            if z(j) ~=  x(i);
+              if base(z(j), coluna) > 0; 
+                soma = soma + base(z(j), coluna);
+                divisor = divisor + 1;            
+              endif;
+            endif;
+          end;
+          if divisor ~= 0;
+            media = soma/divisor;
+            baseSemMissing(x(i),coluna,1) = media;
+          else
+            baseSemMissing(x(i),coluna,1) = 0.0;
           endif;
-        end;
-        
-        media = soma/nElementosDaClasse;
-        
-        baseSemMissing(i,coluna,1) = media;
+        endif;
   end;
   
-  #MÉDIA DOS K5
-  #TÁ ERRADO, PONDO SÓ PARA EVITAR ERR LOGO ABAIXO PÕE ZERO
-  baseSemMissing(:,:,2) = base;
-  [x, y] = find (base == -1);
-  for i = 1:length(x);
-    baseSemMissing(x(i),:,2) = 5.0; #x(i) retorna a linha que contém o -1
-  end;
+  #média dos k-5
+  k = 5;
+  baseSemMissing(:,:,2) = knnM(k, base);
   
-  #cria-se uma nova base, que simplificará no uso do fold abaixo
-  baseFold = zeros(2,2); #apenas para inicializá-la
+  baseAntesNormalizacao = base;
+  #ADIÇÃO DE UM VALOR, NO CASO, SEMPRE 1
+  #baseSemMissing(:,:,2) = base;
+  #[x, y] = find (base == -1);
+  #for i = 1:length(x);
+   # baseSemMissing(x(i),y(i),2) = 7.0; #x(i) retorna a linha que contém o -1
+  #end;
   
-  #FAZER O 10fold cv
-  #números de bases
-  n_divisoes = 10;
-  
-  k_knn = 3;
-  
-  acuracia = zeros(1,3); #acurácia dos três modelos
-  
-  base_apos_tudo = ones(2,2);
-  for i = 1:3; #pois é a quantidade de bases sem missing
-    if i == 3; 
-      baseFold = baseSemMissing_elementosRemovidos;
-    else baseFold = baseSemMissing(:,:,i); 
-    endif;
-  
-    #pega o tamanho da base sem missing values
-    [n_linhas, n_colunas]  = size(baseFold);
-    
-    #determina o tamanho mínimo de um folder   
-    tamanho_folder = ceil(n_linhas/n_divisoes);
-
-    
-    #início e fim de elementos (índice)
-    inicio = 1;
-    fim = tamanho_folder;
-    
-    #criação dos folderes
-    if i == 1;
-      base_fold_cv_media_classe = zeros(tamanho_folder, n_colunas, n_divisoes);
-    elseif i == 2; 
-      base_fold_cv_k5 = zeros(tamanho_folder, n_colunas, n_divisoes);
+  #transforma para .txt e .arff as bases
+  for i = 1:4;
+    if i < 3;
+      porEmArquivo(baseSemMissing(:,:,i), i);
     elseif i == 3;
-      base_fold_cv_remover_missing = zeros(tamanho_folder, n_colunas, n_divisoes);
+      porEmArquivo(baseSemMissing_elementosRemovidos, i);
+    else
+      porEmArquivo(baseAntesNormalizacao, i);
     endif;
-    
-    #não fica o mais próximo possível, mas outras implementações seriam muito
-    #complicadas
-    for l = 1:n_divisoes;
-      if l ~= n_divisoes;
-        if i == 1;
-          base_fold_cv_media_classe(:,:,l) = baseFold(inicio:fim, :);
-        elseif i == 2; 
-          base_fold_cv_k5(:,:,l) = baseFold(inicio:fim, :);
-        elseif i == 3;
-          base_fold_cv_remover_missing(:,:,l) = baseFold(inicio:fim, :);
-        endif;
-        inicio = inicio + tamanho_folder;
-        fim = fim + tamanho_folder;
-      else    
-        #desse jeito evita erros, pois não se pode ter arrays com tamanhos distintos
-       # no octave 
-       vv = 1; #indica a linha que vai pôr
-        for b = inicio:size(baseFold, 1);
-          if i == 1;
-            base_fold_cv_media_classe(vv,:,n_divisoes) = baseFold(b, :);
-          elseif i == 2; 
-             base_fold_cv_k5(vv,:,n_divisoes) = baseFold(b, :);
-          elseif i == 3;
-            base_fold_cv_remover_missing(vv,:,n_divisoes) = baseFold(b, :);
-          endif;
-          vv = vv + 1;
-        end;
-      endif;
-    end;
-    
-    #tem a base no for finalizada, pode passar para o knn
-    
-    if i == 1;
-      classe_knn_media_classe = knnP(k_knn, base_fold_cv_media_classe);
-      for index = 1:size(classe_knn_media_classe)
-        if classe_knn_media_classe(i,1) == base(i, nColunas)
-          acuracia(1,1) = acuracia(1,1) + 1;
-        endif;
-      endfor;
-      acuracia(1,1) = acuracia(1,1)/size(classe_knn_media_classe, 1)
-    elseif i == 2;
-      classe_knn_k5 = knnP(k_knn, base_fold_cv_k5);
-      for index = 1:size(classe_knn_media_classe)
-        if classe_knn_k5(i,1) == base(i, nColunas)
-          acuracia(1,2) = acuracia(1,2) + 1;
-        endif;
-      endfor;
-      acuracia(1,2) = acuracia(1,2)/size(classe_knn_k5, 1)
-    elseif i == 3;
-      classe_knn_remover_missing = knnP(k_knn, base_fold_cv_remover_missing);
-      for index = 1:size(classe_knn_remover_missing)
-        if classe_knn_k5(i,1) == base_fold_cv_remover_missing(i, nColunas)
-          acuracia(1,3) = acuracia(1,3) + 1;
-        endif;
-      endfor;
-      acuracia(1,3) = acuracia(1,3)/size(classe_knn_remover_missing, 1)
-    endif;
-    
-    if i == 3;
-      if acuracia(1,1) >= acuracia(1,2) && acuracia(1,1) >= acuracia(1,3);
-        base_apos_tudo = base_fold_cv_media_classe;
-      elseif acuracia(1,2) >= acuracia(1,1) && acuracia(1,2) >= acuracia(1,3);
-        base_apos_tudo = base_fold_cv_k5;
-      elseif acuracia(1,3) >= acuracia(1,1) && acuracia(1,3) >= acuracia(1,2);
-        base_apos_tudo = base_fold_cv_remover_missing;
-      endif;
-    endif;
-  end;
+  endfor;
   
-
-    
+  nova_base = pcaP(baseSemMissing(:,:,1));
+  
+  porEmArquivo(nova_base, 5);
+  #CÓDIGO DE COMPLEMENTO FICA AQUI 
 endfunction
