@@ -23,7 +23,7 @@ os.path.exists(sub_dir)
 
 # reasd csv
 train = pd.read_csv(os.path.join(data_dir, 'Train', 'train_node.csv'))
-test = pd.read_csv(os.path.join(data_dir, 'test_node.csv'))
+test = pd.read_csv(os.path.join(sub_dir, 'prova_node.csv'))
 
 # read output csv
 sample_submission = pd.read_csv(os.path.join(data_dir, 'Sample_Submission.csv'))
@@ -80,6 +80,9 @@ test_x /= 255.0
 # converter a class vector of integers to binary class matrix
 train_y = keras.utils.np_utils.to_categorical(train.label.values)
 
+# converter a class vector of integers to binary class matrix
+test_y = keras.utils.np_utils.to_categorical(test.label.values)
+
 # divide 70:30
 split_size = int(train_x.shape[0] * 0.7)
 
@@ -92,7 +95,7 @@ input_num_units = 22500
 hidden_num_units = 50
 output_num_units = 6
 
-epochs = 50
+epochs = 1000
 batch_size = 183 # 128
 
 # import keras modules
@@ -107,25 +110,35 @@ from keras.layers.convolutional import MaxPooling2D
 from keras.utils import np_utils
 
 # create model
-'''model = Sequential([
-  Dense(output_dim=hidden_num_units, input_dim=input_num_units, activation='relu'),
-  Dense(output_dim=output_num_units, input_dim=hidden_num_units, activation='softmax'),
-])'''
 model = Sequential()
-#model.add(Convolution2D(32, 3, 3, input_shape=(None, 3, 150, 150)))
 model.add(Convolution2D(32, 3, 3, border_mode='valid', input_shape=(3, 150, 150)))
+model.add(Dropout(0.2))
+model.add(Convolution2D(32, 3, 3, activation='relu', border_mode='same', W_constraint=maxnorm(3)))
+model.add(MaxPooling2D(pool_size=(2, 2), dim_ordering="th"))
+model.add(Flatten())
+model.add(Dense(512, activation='relu', W_constraint=maxnorm(3)))
+model.add(Dropout(0.5))
+model.add(Dense(output_num_units, activation='softmax'))
 
 # compile the model with necessary attributes
 model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
+from keras.utils import visualize_util
+visualize_util.plot(model, to_file='classification_architecture.png', show_shapes=True)
+
 # train our model
-#train_y = train_y.reshape(128, 6, 1, 1)
 print(train_x.shape, train_y.shape)
 trained_model = model.fit(train_x, train_y, nb_epoch=epochs, batch_size=batch_size, validation_data=(val_x, val_y))
 
-pred = model.predict_classes(test_x)
+scores = model.evaluate(test_x, test_y, verbose=0)
+print("Accuracy: %.2f%%" % (scores[1]*100))
+print(model.summary())
+
+'''pred = model.predict_classes(test_x)
 
 # output to csv
 sample_submission.filename = test.filename
 sample_submission.label = pred
 sample_submission.to_csv(os.path.join(sub_dir, 'sub02.csv'), index=False)
+'''
+print('\nFinish')
