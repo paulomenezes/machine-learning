@@ -111,7 +111,7 @@ from keras.utils import np_utils
 
 # create model
 model = Sequential()
-model.add(Convolution2D(32, 3, 3, border_mode='valid', input_shape=(3, 150, 150)))
+model.add(Convolution2D(32, 3, 3, activation='relu', border_mode='valid', input_shape=(3, 150, 150)))
 model.add(Dropout(0.2))
 model.add(Convolution2D(32, 3, 3, activation='relu', border_mode='same', W_constraint=maxnorm(3)))
 model.add(MaxPooling2D(pool_size=(2, 2), dim_ordering="th"))
@@ -132,13 +132,12 @@ trained_model = model.fit(train_x, train_y, nb_epoch=epochs, batch_size=batch_si
 
 scores = model.evaluate(test_x, test_y, verbose=0)
 print("Accuracy: %.2f%%" % (scores[1]*100))
-print(model.summary())
 
-'''pred = model.predict_classes(test_x)
+pred = model.predict_classes(test_x)
 
 # output to csv
 sample_submission.filename = test.filename
 sample_submission.label = pred
 sample_submission.to_csv(os.path.join(sub_dir, 'sub02.csv'), index=False)
-'''
+
 print('\nFinish')
