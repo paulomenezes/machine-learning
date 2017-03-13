@@ -2,6 +2,7 @@ import pylab
 import os
 import numpy as np
 import pandas as pd
+from scipy.misc import imshow
 from scipy.misc import imread
 from scipy.misc import imresize
 from sklearn.metrics import accuracy_score
@@ -72,7 +73,9 @@ print('Test images ' + str(i))
 
 # store all images as numpy array
 test_x = np.stack(temp)
+print(test_x.shape)
 test_x = test_x.reshape(test_x.shape[0], 3, 150, 150)
+print(test_x.shape)
 # transform images to 0-1
 test_x /= 255.0
 #test_x = test_x.reshape(-1, 22500).astype('float32')
@@ -95,7 +98,7 @@ input_num_units = 22500
 hidden_num_units = 50
 output_num_units = 6
 
-epochs = 1000
+epochs = 100
 batch_size = 183 # 128
 
 # import keras modules
@@ -111,13 +114,24 @@ from keras.utils import np_utils
 
 # create model
 model = Sequential()
-model.add(Convolution2D(32, 3, 3, border_mode='valid', input_shape=(3, 150, 150)))
+model.add(Convolution2D(32, 3, 3, input_shape=(3, 150, 150), activation='relu', border_mode='same'))
 model.add(Dropout(0.2))
-model.add(Convolution2D(32, 3, 3, activation='relu', border_mode='same', W_constraint=maxnorm(3)))
+model.add(Convolution2D(32, 3, 3, activation='relu', border_mode='same'))
+model.add(MaxPooling2D(pool_size=(2, 2), dim_ordering="th"))
+model.add(Convolution2D(64, 3, 3, activation='relu', border_mode='same'))
+model.add(Dropout(0.2))
+model.add(Convolution2D(64, 3, 3, activation='relu', border_mode='same'))
+model.add(MaxPooling2D(pool_size=(2, 2), dim_ordering="th"))
+model.add(Convolution2D(128, 3, 3, activation='relu', border_mode='same'))
+model.add(Dropout(0.2))
+model.add(Convolution2D(128, 3, 3, activation='relu', border_mode='same'))
 model.add(MaxPooling2D(pool_size=(2, 2), dim_ordering="th"))
 model.add(Flatten())
+model.add(Dropout(0.2))
+model.add(Dense(1024, activation='relu', W_constraint=maxnorm(3)))
+model.add(Dropout(0.2))
 model.add(Dense(512, activation='relu', W_constraint=maxnorm(3)))
-model.add(Dropout(0.5))
+model.add(Dropout(0.2))
 model.add(Dense(output_num_units, activation='softmax'))
 
 # compile the model with necessary attributes
@@ -132,13 +146,12 @@ trained_model = model.fit(train_x, train_y, nb_epoch=epochs, batch_size=batch_si
 
 scores = model.evaluate(test_x, test_y, verbose=0)
 print("Accuracy: %.2f%%" % (scores[1]*100))
-print(model.summary())
 
-'''pred = model.predict_classes(test_x)
+pred = model.predict_classes(test_x)
 
 # output to csv
 sample_submission.filename = test.filename
 sample_submission.label = pred
 sample_submission.to_csv(os.path.join(sub_dir, 'sub02.csv'), index=False)
-'''
+
 print('\nFinish')
