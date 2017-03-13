@@ -35,11 +35,11 @@ let csv3 = [];
 csv3.push('filename,label\n');
 
 let categories = {
-  gul: 1,
-  brody: 2,
-  menem: 3,
-  snow: 4,
-  arm: 5
+  gul: 0,
+  brody: 1,
+  menem: 2,
+  snow: 3,
+  arm: 4
 }
 
 fs.readdir('./data/Train/Images', (err, files) => {
@@ -51,7 +51,7 @@ fs.readdir('./data/Train/Images', (err, files) => {
       csv.push(files[rng] + ',' + categories[files[rng].split(' ')[0]] + '\n');
 
       lwip.open('./data/Train/Images/' + files[rng], (err, image) => {
-        image.resize(150, 150, (err, image) => {
+        image.resize(32, 32, (err, image) => {
           image.writeFile('./data/Train/Images/train/' + files[rng], (err) => {
             console.log(err)
           })
@@ -62,7 +62,7 @@ fs.readdir('./data/Train/Images', (err, files) => {
       csv3.push(files[rng] + ',' + categories[files[rng].split(' ')[0]] + '\n')
 
       lwip.open('./data/Train/Images/' + files[rng], (err, image) => {
-        image.resize(150, 150, (err, image) => {
+        image.resize(32, 32, (err, image) => {
           image.writeFile('./data/Train/Images/test/' + files[rng], (err) => {
             console.log(err)
           })
