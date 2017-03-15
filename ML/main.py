@@ -93,10 +93,10 @@ train.label.ix[split_size:]
 # define vars
 input_num_units = 22500
 hidden_num_units = 50
-output_num_units = 5
+output_num_units = 7
 
 epochs = 1000
-batch_size = 183 # 128
+batch_size = 200 # 128
 
 # import keras modules
 from keras.models import Sequential
@@ -114,10 +114,10 @@ model = Sequential()
 model.add(Convolution2D(32, 3, 3, activation='relu', border_mode='valid', input_shape=(32, 32, 3)))
 model.add(Dropout(0.2))
 model.add(Convolution2D(32, 3, 3, activation='relu', border_mode='same', W_constraint=maxnorm(3)))
-model.add(MaxPooling2D(pool_size=(2, 2), dim_ordering="th"))
+model.add(MaxPooling2D(pool_size=(2, 2)))
 model.add(Flatten())
 model.add(Dense(512, activation='relu', W_constraint=maxnorm(3)))
-model.add(Dropout(0.5))
+model.add(Dropout(0.3))
 model.add(Dense(output_num_units, activation='softmax'))
 
 # compile the model with necessary attributes
