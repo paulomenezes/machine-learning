@@ -95,7 +95,7 @@ input_num_units = 22500
 hidden_num_units = 50
 output_num_units = 7
 
-epochs = 1000
+epochs = 50
 batch_size = 200 # 128
 
 # import keras modules

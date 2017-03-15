@@ -45,6 +45,7 @@ let categories = {
 }
 
 fs.readdir('./data/Train/Images', (err, files) => {
+  console.log(files.length);
   for (var i = 0; i < 286; i++) {
     let rng = result[i];
 
