@@ -52,7 +52,7 @@ print('Train images ' + str(i))
 # store all images as numpy array
 train_x = np.stack(temp)
 
-train_x = train_x.reshape(train_x.shape[0], 3, 150, 150)
+train_x = train_x.reshape(train_x.shape[0], 32, 32, 3)
 # transform images to 0-1
 train_x /= 255.0
 #train_x = train_x.reshape(-1, 22500).astype('float32')
@@ -74,7 +74,7 @@ print('Test images ' + str(i))
 # store all images as numpy array
 test_x = np.stack(temp)
 print(test_x.shape)
-test_x = test_x.reshape(test_x.shape[0], 3, 150, 150)
+test_x = test_x.reshape(test_x.shape[0], 32, 32, 3)
 print(test_x.shape)
 # transform images to 0-1
 test_x /= 255.0
@@ -96,10 +96,10 @@ train.label.ix[split_size:]
 # define vars
 input_num_units = 22500
 hidden_num_units = 50
-output_num_units = 6
+output_num_units = 7
 
-epochs = 100
-batch_size = 183 # 128
+epochs = 50
+batch_size = 200 # 128
 
 # import keras modules
 from keras.models import Sequential
@@ -114,18 +114,18 @@ from keras.utils import np_utils
 
 # create model
 model = Sequential()
-model.add(Convolution2D(32, 3, 3, input_shape=(3, 150, 150), activation='relu', border_mode='same'))
+model.add(Convolution2D(32, 3, 3, input_shape=(32, 32, 3), activation='relu', border_mode='same'))
 model.add(Dropout(0.2))
 model.add(Convolution2D(32, 3, 3, activation='relu', border_mode='same'))
-model.add(MaxPooling2D(pool_size=(2, 2), dim_ordering="th"))
+model.add(MaxPooling2D(pool_size=(2, 2)))
 model.add(Convolution2D(64, 3, 3, activation='relu', border_mode='same'))
 model.add(Dropout(0.2))
 model.add(Convolution2D(64, 3, 3, activation='relu', border_mode='same'))
-model.add(MaxPooling2D(pool_size=(2, 2), dim_ordering="th"))
+model.add(MaxPooling2D(pool_size=(2, 2)))
 model.add(Convolution2D(128, 3, 3, activation='relu', border_mode='same'))
 model.add(Dropout(0.2))
 model.add(Convolution2D(128, 3, 3, activation='relu', border_mode='same'))
-model.add(MaxPooling2D(pool_size=(2, 2), dim_ordering="th"))
+model.add(MaxPooling2D(pool_size=(2, 2)))
 model.add(Flatten())
 model.add(Dropout(0.2))
 model.add(Dense(1024, activation='relu', W_constraint=maxnorm(3)))
