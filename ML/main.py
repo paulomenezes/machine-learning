@@ -95,8 +95,8 @@ input_num_units = 22500
 hidden_num_units = 50
 output_num_units = 7
 
-epochs = 50
-batch_size = 200 # 128
+epochs = 100
+batch_size = 78 # 128
 
 # import keras modules
 from keras.models import Sequential

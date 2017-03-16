@@ -17,7 +17,7 @@ function randomNumbers(max) {
     };
 }
 
-var randoms = randomNumbers(286),
+var randoms = randomNumbers(112),
     rand = randoms(),
     result = [];
 while (rand != null) {
@@ -46,11 +46,11 @@ let categories = {
 
 fs.readdir('./data/Train/Images', (err, files) => {
   console.log(files.length);
-  for (var i = 0; i < 286; i++) {
+  for (var i = 0; i < 112; i++) {
     let rng = result[i];
 
     // train
-    if (i <= 200) {
+    if (i <= 78) {
       csv.push(files[rng] + ',' + categories[files[rng].split(' ')[0]] + '\n');
 
       lwip.open('./data/Train/Images/' + files[rng], (err, image) => {
