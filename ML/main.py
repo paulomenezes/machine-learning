@@ -98,8 +98,8 @@ input_num_units = 22500
 hidden_num_units = 50
 output_num_units = 7
 
-epochs = 50
-batch_size = 200 # 128
+epochs = 200
+batch_size = 78 # 128
 
 # import keras modules
 from keras.models import Sequential
@@ -143,6 +143,8 @@ visualize_util.plot(model, to_file='classification_architecture.png', show_shape
 # train our model
 print(train_x.shape, train_y.shape)
 trained_model = model.fit(train_x, train_y, nb_epoch=epochs, batch_size=batch_size, validation_data=(val_x, val_y))
+
+model.summary()
 
 scores = model.evaluate(test_x, test_y, verbose=0)
 print("Accuracy: %.2f%%" % (scores[1]*100))
